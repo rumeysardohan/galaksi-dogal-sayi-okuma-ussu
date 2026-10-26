@@ -1,0 +1,1 @@
+# galaksi-dogal-sayi-okuma-ussu
