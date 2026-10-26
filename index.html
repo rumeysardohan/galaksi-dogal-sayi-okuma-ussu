@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#140f3a">
+<meta name="description" content="5. sınıf sayı okuma, sayı yazma, basamak ve bölük oyunu: sevimli uzaylıları üsse ışınla!">
+<title>Galaksi Sayı Üssü</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&display=swap">
+<style>
+/* Layout: üstte HUD + süre, ortada uzay sahnesi (üs, ışın, uzaylı, astronot), altta görev kartı */
+:root{
+  --space:#140f3a; --space-2:#2a1d72; --panel:#251c63; --panel-2:#33287f; --line:#4c40a6;
+  --ink:#fdf8ff; --muted:#c9c0f2;
+  --mint:#6ff0c0; --pink:#ff8fd0; --sun:#ffd45e; --sky:#7cc8ff; --red:#ff6b7f;
+  --f-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Nunito","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;overflow-x:hidden;
+  background:radial-gradient(ellipse at 50% -10%,#4a33a8 0%,#2a1d72 35%,var(--space) 75%) fixed,var(--space)}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--sun);outline-offset:3px}
+[hidden]{display:none!important}
+#sky,#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#sky{z-index:0} #fx{z-index:60}
+.wrap{position:relative;z-index:1;max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:14px;
+  padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));
+  padding-block:calc(14px + env(safe-area-inset-top,0px)) calc(28px + env(safe-area-inset-bottom,0px))}
+.panel{background:color-mix(in srgb,var(--panel) 90%,transparent);border:2px solid var(--line);border-radius:24px;box-shadow:0 12px 0 #0e0a2c55,0 20px 50px #0006}
+h1,h2,h3{font-family:var(--f-display);line-height:1.05;margin:0;text-wrap:balance}
+.eyebrow{font-weight:900;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mint)}
+.btn{border:0;border-radius:16px;padding:13px 22px;font-weight:900;font-size:1.05rem;background:var(--sun);color:#3a2600;box-shadow:0 5px 0 #c28f12;transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #c28f12}
+.btn.mint{background:var(--mint);color:#06372a;box-shadow:0 5px 0 #2fae84}
+.btn.pink{background:var(--pink);color:#4a0f33;box-shadow:0 5px 0 #c4559a}
+.btn.ghost{background:var(--panel-2);color:var(--ink);box-shadow:0 5px 0 #1b1450}
+.btn.small{padding:8px 14px;font-size:.92rem;border-radius:12px}
+.icon-btn{width:44px;height:44px;border-radius:14px;border:2px solid var(--line);background:var(--panel-2);font-size:1.2rem;display:grid;place-items:center}
+.icon-btn.off{opacity:.45}
+
+/* ---------- MENÜ ---------- */
+.menu{display:flex;flex-direction:column;gap:16px}
+.hero{padding:22px;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:center;overflow:hidden;position:relative}
+.hero h1{font-size:clamp(2.3rem,7vw,4.2rem);color:var(--sun);text-shadow:0 4px 0 #a4570e}
+.hero h1 span{display:block;color:var(--ink);text-shadow:0 4px 0 #3b2c99}
+.hero p{margin:10px 0 0;color:var(--muted);font-weight:700;max-width:46ch}
+.crew{display:flex;justify-content:center;align-items:flex-end;gap:4px;min-height:150px}
+.crew .m{width:clamp(56px,11vw,96px)}
+.crew .m:nth-child(2){width:clamp(70px,14vw,120px)}
+.crew .m:nth-child(odd) .bob{animation-delay:-.8s}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px}
+.mode{padding:20px;display:flex;flex-direction:column;gap:10px;text-align:left;border:2px solid var(--line);border-radius:24px;background:var(--panel);transition:transform .15s,border-color .15s}
+.mode:hover{transform:translateY(-3px);border-color:var(--sun)}
+.mode h2{font-size:1.7rem;color:var(--sun)}
+.mode p{margin:0;color:var(--muted);font-weight:700}
+.mode .go{align-self:flex-start;margin-top:4px}
+.opts-row{padding:18px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:2px solid var(--line);background:var(--panel-2);border-radius:14px;padding:8px 14px;font-weight:900;display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+.seg button small{font-weight:700;color:var(--muted);font-size:.75rem}
+.seg button[aria-pressed="true"]{border-color:var(--mint);background:#1f5a5a}
+.how{padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px}
+.how div{display:flex;gap:10px;align-items:flex-start;font-weight:700;color:var(--muted)}
+.how b{color:var(--ink)}
+.how .ic{flex:none;width:40px;height:40px;border-radius:12px;background:var(--panel-2);display:grid;place-items:center;font-size:1.3rem}
+.best{font-weight:900;color:var(--sun)}
+
+/* ---------- GRUP KURULUM ---------- */
+.gsetup{padding:22px;display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.flabel{font-size:.78rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.field input,.field select{font:inherit;font-weight:800;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:var(--space);color:var(--ink);min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+.team-in{display:flex;gap:10px;align-items:center;background:var(--panel-2);border-radius:16px;padding:8px 12px}
+.team-in .av{width:52px;flex:none}
+.team-in input{flex:1;width:100%}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip-t{border:2px solid var(--line);background:var(--panel-2);border-radius:99px;padding:8px 14px;font-weight:900}
+.chip-t[aria-pressed="true"]{border-color:var(--mint);background:#1f5a5a}
+
+/* ---------- OYUN ---------- */
+.play{display:flex;flex-direction:column;gap:12px}
+.hud{padding:10px 14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;border-radius:20px}
+.hud .lv{display:flex;align-items:center;gap:10px;min-width:0}
+.hud .lv b{font-family:var(--f-display);font-size:1.25rem;line-height:1.1}
+.dots{display:flex;gap:4px;margin-top:3px}
+.dots i{width:14px;height:8px;border-radius:9px;background:#ffffff26}
+.dots i.ok{background:var(--mint)} .dots i.no{background:var(--red)} .dots i.now{background:var(--sun)}
+.hud .mid{display:flex;align-items:center;gap:10px;font-weight:900}
+.hearts{font-size:1.35rem;letter-spacing:2px}
+.hud .right{display:flex;align-items:center;gap:8px}
+.score{font-family:var(--f-display);font-size:1.4rem;color:var(--sun);font-variant-numeric:tabular-nums;min-width:70px;text-align:right}
+.streak{font-weight:900;font-size:.85rem;background:#5a2a14;color:#ffb27d;border-radius:99px;padding:4px 10px}
+.timer{display:flex;align-items:center;gap:10px;padding:0 4px}
+.timer .t{font-weight:900;font-variant-numeric:tabular-nums;min-width:66px}
+.tbar{flex:1;height:14px;border-radius:99px;background:#ffffff1a;overflow:hidden;border:2px solid var(--line)}
+.tbar i{display:block;height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,var(--mint),var(--sky));transition:width .1s linear}
+.timer.low .tbar i{background:var(--red)}
+.timer.low .t{color:var(--red);animation:pulse .5s ease infinite alternate}
+@keyframes pulse{to{transform:scale(1.12)}}
+.teams{display:flex;gap:8px;flex-wrap:wrap}
+.tchip{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:16px;background:var(--panel);border:2px solid var(--line);flex:1;min-width:140px}
+.tchip .av{width:36px;flex:none}
+.tchip b{display:block;font-size:.9rem;line-height:1.15;overflow-wrap:anywhere}
+.tchip span{font-family:var(--f-display);color:var(--sun);font-size:1.1rem}
+.tchip.on{border-color:var(--sun);background:var(--panel-2)}
+
+/* sahne */
+.stage{position:relative;height:clamp(230px,36vh,310px);overflow:hidden;border-radius:26px;border:2px solid var(--line);
+  background:radial-gradient(circle at 85% 120%,#5e3fbf 0 18%,transparent 19%),radial-gradient(circle at 12% 18%,#ffffff10 0 6%,transparent 7%),linear-gradient(180deg,#1a1450cc,#2c1f78cc)}
+.planet{position:absolute;right:-30px;bottom:-40px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffb0e0,#c25aa8 60%,#7c2f7a);opacity:.9}
+.planet::after{content:"";position:absolute;left:-30px;right:-30px;top:58px;height:30px;border-radius:50%;border:6px solid #ffd45e99;transform:rotate(-14deg)}
+.moon{position:absolute;left:18%;top:14%;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff7d6,#d9c98f);box-shadow:0 0 22px #fff3b055}
+.base{position:absolute;left:50%;top:6px;transform:translateX(-50%);width:clamp(170px,30vw,240px);z-index:2}
+.base svg{width:100%;display:block;filter:drop-shadow(0 6px 10px #0006)}
+.blink{animation:blink 1.2s steps(2) infinite}
+.blink.b2{animation-delay:.6s}
+@keyframes blink{50%{opacity:.15}}
+.beam{position:absolute;left:50%;top:clamp(58px,10vw,78px);bottom:16px;width:180px;transform:translateX(-50%);z-index:1;
+  clip-path:polygon(42% 0,58% 0,100% 100%,0 100%);background:linear-gradient(180deg,#bffff0ee,#6ff0c033 85%,transparent);opacity:0;transition:opacity .25s}
+.beam.on{opacity:1;animation:beamw .3s ease infinite alternate}
+@keyframes beamw{to{filter:brightness(1.3)}}
+.astro{position:absolute;left:clamp(6px,3vw,30px);bottom:8px;width:clamp(78px,13vw,112px);z-index:3}
+.astro .bob{animation-duration:3.2s}
+.say{position:absolute;left:clamp(80px,15vw,140px);bottom:clamp(90px,15vw,120px);max-width:min(260px,48vw);z-index:4;
+  background:#fff;color:#2b2350;font-weight:800;font-size:.92rem;line-height:1.3;padding:9px 12px;border-radius:16px 16px 16px 4px;box-shadow:0 6px 0 #0003;
+  transition:opacity .2s,transform .2s;transform-origin:0 100%}
+.say.hide{opacity:0;transform:scale(.8)}
+.alienWrap{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:clamp(96px,17vw,140px);z-index:2;display:flex;flex-direction:column;align-items:center}
+.alienWrap.boss{width:clamp(150px,26vw,210px)}
+.aname{font-weight:900;font-size:.8rem;background:#0008;border-radius:99px;padding:2px 10px;margin-bottom:2px;white-space:nowrap}
+.alien{width:100%}
+.alien svg,.av svg,.m svg,.astro svg{width:100%;height:auto;display:block;overflow:visible}
+.bob{animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px)}}
+.eyes{animation:blinkEye 4s infinite;transform-box:fill-box;transform-origin:center}
+@keyframes blinkEye{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
+.alien.enter{animation:enter .6s cubic-bezier(.3,1.6,.5,1)}
+.alien.up{animation:up 1.1s ease-in forwards .25s}
+.alien.sad{animation:shake .5s ease}
+.alien.flee{animation:flee .9s ease-in forwards .3s}
+@keyframes enter{from{transform:translateY(-80px) scale(.2);opacity:0}}
+@keyframes up{to{transform:translateY(-190px) scale(.15) rotate(20deg);opacity:0}}
+@keyframes shake{20%,60%{transform:translateX(-10px) rotate(-5deg)}40%,80%{transform:translateX(10px) rotate(5deg)}}
+@keyframes flee{to{transform:translate(420px,-60px) rotate(30deg);opacity:0}}
+.rescued{position:absolute;right:12px;top:10px;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px;max-width:30%;z-index:3}
+.rescued .r{width:22px}
+.rescued .r.pop{animation:enter .5s cubic-bezier(.3,1.6,.5,1)}
+.bossbar{position:absolute;right:12px;top:12px;z-index:4;width:min(200px,38%);background:#0008;border-radius:12px;padding:6px 10px;font-weight:900;font-size:.8rem}
+.bossbar .hp{height:10px;border-radius:99px;background:#ffffff22;margin-top:4px;overflow:hidden}
+.bossbar .hp i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--sun));transition:width .4s}
+.float-pts{position:absolute;left:50%;bottom:45%;transform:translateX(-50%);z-index:6;font-family:var(--f-display);font-size:2rem;color:var(--sun);text-shadow:0 3px 0 #0006;animation:rise 1.2s ease-out forwards;pointer-events:none;white-space:nowrap}
+.float-pts.bad{color:var(--red)}
+@keyframes rise{to{transform:translate(-50%,-70px);opacity:0}}
+
+/* görev kartı */
+.qcard{padding:18px;display:flex;flex-direction:column;gap:14px}
+.qtop{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.qchip{font-weight:900;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;background:var(--panel-2);border:2px solid var(--line);border-radius:99px;padding:5px 12px;color:var(--mint)}
+.ask{font-family:var(--f-display);font-size:clamp(1.25rem,3vw,1.6rem);font-weight:700;text-align:center;margin:0}
+.numdisp{display:flex;justify-content:center;flex-wrap:wrap;gap:0;font-family:var(--f-display);font-weight:800;font-size:clamp(2.2rem,8vw,4rem);line-height:1;
+  background:var(--space);border:2px solid var(--line);border-radius:18px;padding:14px 10px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.numdisp .d{display:inline-block;min-width:.58em;text-align:center;border-radius:10px}
+.numdisp .d.gap{margin-right:.32em}
+.numdisp .d.hl{color:#2b2350;background:var(--sun);box-shadow:0 0 0 4px #ffd45e55;animation:hlpulse 1s ease-in-out infinite alternate}
+@keyframes hlpulse{to{box-shadow:0 0 0 9px #ffd45e22}}
+.wordsdisp{text-align:center;font-family:var(--f-display);font-weight:700;font-size:clamp(1.3rem,4vw,2rem);line-height:1.2;background:var(--space);border:2px solid var(--line);border-radius:18px;padding:16px 14px;color:var(--sky)}
+.exprdisp{text-align:center;font-family:var(--f-display);font-weight:800;font-size:clamp(1.2rem,4vw,1.9rem);background:var(--space);border:2px solid var(--line);border-radius:18px;padding:14px;line-height:1.35}
+.exprdisp .plus{color:var(--pink);margin:0 .25em}
+.exprdisp .term{white-space:nowrap}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.answers.long{grid-template-columns:1fr}
+.ans{position:relative;border:2px solid var(--line);background:var(--panel-2);border-radius:16px;padding:14px 14px 14px 46px;text-align:left;font-weight:900;font-size:1.1rem;min-height:58px;box-shadow:0 4px 0 #160f45;transition:transform .1s,border-color .1s}
+.answers:not(.long) .ans{font-family:var(--f-display);font-size:1.45rem;text-align:center;padding-left:40px}
+.ans:hover:not(:disabled){border-color:var(--sun);transform:translateY(-2px)}
+.ans .k{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:8px;background:var(--space);color:var(--muted);font-size:.8rem;display:grid;place-items:center;font-family:var(--f-body)}
+.ans:disabled{cursor:default}
+.ans.ok{border-color:var(--mint);background:#1d5c4b;opacity:1}
+.ans.no{border-color:var(--red);background:#5c1d36;opacity:1}
+.ans.dim{opacity:.45}
+.typed{display:flex;align-items:center;justify-content:center;min-height:76px;font-family:var(--f-display);font-weight:800;font-size:clamp(2rem,7vw,3.4rem);background:var(--space);border:3px dashed var(--line);border-radius:18px;padding:8px;font-variant-numeric:tabular-nums}
+.typed .ph{font-size:1.1rem;color:var(--muted);font-family:var(--f-body)}
+.typed .caret{display:inline-block;width:4px;height:.9em;background:var(--sun);margin-left:4px;animation:blink 1s steps(2) infinite}
+.keypad{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.keypad button{border:2px solid var(--line);background:var(--panel-2);border-radius:14px;font-family:var(--f-display);font-weight:800;font-size:1.6rem;padding:8px 0;box-shadow:0 4px 0 #160f45}
+.keypad button:active{transform:translateY(3px);box-shadow:0 1px 0 #160f45}
+.keypad .wide{grid-column:span 2;font-size:1.05rem;font-family:var(--f-body);font-weight:900}
+.keypad .go{background:var(--mint);color:#06372a;border-color:var(--mint)}
+.qtools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.fb{border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;animation:enter .35s ease}
+.fb.ok{background:#1b4f44;border:2px solid var(--mint)}
+.fb.no{background:#4f1b35;border:2px solid var(--red)}
+.fb.hint{background:#2c3f7a;border:2px solid var(--sky)}
+.fb h3{font-size:1.5rem}
+.fb p{margin:0;font-weight:700}
+.fb .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.btwrap{overflow-x:auto;border-radius:12px}
+table.bt{border-collapse:separate;border-spacing:3px;margin:0 auto;font-weight:900;text-align:center}
+table.bt th{font-size:.72rem;font-weight:900;color:var(--muted);background:#0003;border-radius:8px;padding:4px 6px;line-height:1.15}
+table.bt th.g{font-size:.82rem;color:var(--ink);background:#ffffff14}
+table.bt td{font-family:var(--f-display);font-size:1.6rem;min-width:44px;background:var(--space);border-radius:10px;padding:2px 6px}
+table.bt td.e{background:transparent}
+table.bt td.hl{background:var(--sun);color:#2b2350}
+table.bt .gs{background:#3d7d6a!important;color:#fff}
+table.bt td.w{font-family:var(--f-body);font-size:.85rem;font-weight:800;color:var(--sky);background:#ffffff0d;padding:6px}
+table.bt td.w.z{color:var(--muted);font-style:italic}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:#0b0826cc;backdrop-filter:blur(6px)}
+.mbox{width:min(560px,100%);max-height:calc(100% - 20px);overflow:auto;text-align:center;padding:24px;display:flex;flex-direction:column;align-items:center;gap:12px;animation:enter .45s cubic-bezier(.3,1.5,.5,1)}
+.mbox .art{width:min(150px,40vw)}
+.mbox h2{font-size:clamp(1.8rem,5vw,2.4rem);color:var(--sun)}
+.mbox p{margin:0;color:var(--muted);font-weight:700;max-width:44ch}
+.stars{font-size:2.4rem;letter-spacing:6px}
+.stars .off{filter:grayscale(1);opacity:.3}
+.rank{list-style:none;margin:0;padding:0;display:grid;gap:8px;width:100%}
+.rank li{display:flex;align-items:center;gap:10px;background:var(--panel-2);border-radius:14px;padding:6px 12px;font-weight:900;text-align:left}
+.rank li .av{width:40px;flex:none}
+.rank li .nm{flex:1;min-width:0;overflow-wrap:anywhere}
+.rank li .sc{font-family:var(--f-display);color:var(--sun);font-size:1.3rem}
+.rank li:first-child{border:2px solid var(--sun)}
+.mrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+footer{text-align:center;color:var(--muted);font-size:.8rem;font-weight:700}
+
+@media (max-width:640px){
+  .hero{grid-template-columns:1fr;padding:18px}
+  .crew{min-height:110px}
+  .answers{grid-template-columns:1fr}
+  .answers:not(.long) .ans{font-size:1.3rem}
+  .keypad{grid-template-columns:repeat(5,1fr)}
+  .keypad .wide{grid-column:span 5}
+  .say{font-size:.82rem}
+  .rescued{max-width:34%}
+  .score{min-width:0}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<main class="wrap">
+
+  <!-- ============ MENÜ ============ -->
+  <section id="menu" class="menu">
+    <div class="panel hero">
+      <div>
+        <div class="eyebrow">5. Sınıf · Doğal Sayılar</div>
+        <h1>Galaksi <span>Sayı Üssü</span></h1>
+        <p>Sayı kristalleri uzaya saçıldı. Sevimli uzaylılar eve dönmek için senin yardımını bekliyor! Sayıları oku, yaz, basamakları bul ve onları üsse ışınla.</p>
+      </div>
+      <div class="crew" id="crew"></div>
+    </div>
+
+    <div class="modes">
+      <button class="mode" id="soloBtn">
+        <div class="eyebrow">Tek oyuncu</div>
+        <h2>Kaşif Görevi</h2>
+        <p>3 can, her soruda süre. 4 gezegeni gez, en sonda Mega Pofuduk'u yen!</p>
+        <span class="btn go">Göreve başla 🚀</span>
+      </button>
+      <button class="mode" id="groupBtn">
+        <div class="eyebrow">Sınıfça</div>
+        <h2>Grup Yarışı</h2>
+        <p>2–4 takım sırayla yarışır. Hızlı ve doğru cevap daha çok puan getirir.</p>
+        <span class="btn pink go">Takımları kur 👾</span>
+      </button>
+    </div>
+
+    <div class="panel opts-row">
+      <div class="field" style="gap:8px">
+        <span class="flabel">Zorluk</span>
+        <div class="seg" id="diffSeg">
+          <button data-d="caylak" aria-pressed="false">Çaylak<small>7 basamağa kadar · 40 sn</small></button>
+          <button data-d="kasif" aria-pressed="true">Kaşif<small>8 basamağa kadar · 30 sn</small></button>
+          <button data-d="kaptan" aria-pressed="false">Kaptan<small>9 basamağa kadar · 20 sn</small></button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="best" id="bestLbl"></span>
+        <button class="icon-btn snd-music" title="Müzik" aria-label="Müziği aç veya kapat">🎵</button>
+        <button class="icon-btn snd-fx" title="Ses efektleri" aria-label="Ses efektlerini aç veya kapat">🔊</button>
+      </div>
+    </div>
+
+    <div class="panel how">
+      <div><span class="ic">🪐</span><span><b>Basamak Gezegeni:</b> Rakam hangi basamakta, değeri kaç?</span></div>
+      <div><span class="ic">🛰️</span><span><b>Okuma Uydusu:</b> Sayının doğru okunuşunu bul.</span></div>
+      <div><span class="ic">⌨️</span><span><b>Yazma İstasyonu:</b> Okunuşu dinle, sayıyı tuşla.</span></div>
+      <div><span class="ic">🌌</span><span><b>Bölük Nebulası:</b> Birler, binler, milyonlar bölüğü ve çözümleme.</span></div>
+    </div>
+  </section>
+
+  <!-- ============ GRUP KURULUM ============ -->
+  <section id="gsetup" class="panel gsetup" hidden>
+    <div class="qtop"><h2 style="font-size:2rem;color:var(--sun)">Grup Yarışı</h2><button class="btn ghost small" id="gBack">← Menü</button></div>
+    <div class="grid2">
+      <div class="field"><label for="gCount">Takım sayısı</label>
+        <select id="gCount"><option value="2">2 takım</option><option value="3" selected>3 takım</option><option value="4">4 takım</option></select></div>
+      <div class="field"><label for="gRounds">Her takıma soru</label>
+        <select id="gRounds"><option value="3">3 soru</option><option value="5" selected>5 soru</option><option value="7">7 soru</option></select></div>
+    </div>
+    <div class="grid2" id="gTeams"></div>
+    <div class="field"><span class="flabel">Konular</span>
+      <div class="chips" id="gTopics">
+        <button class="chip-t" data-t="basamak" aria-pressed="true">🪐 Basamak</button>
+        <button class="chip-t" data-t="okuma" aria-pressed="true">🛰️ Sayı okuma</button>
+        <button class="chip-t" data-t="yazma" aria-pressed="true">⌨️ Sayı yazma</button>
+        <button class="chip-t" data-t="boluk" aria-pressed="true">🌌 Bölük ve çözümleme</button>
+      </div>
+    </div>
+    <button class="btn pink" id="gStart" style="align-self:flex-start">Yarışı başlat 👾</button>
+  </section>
+
+  <!-- ============ OYUN ============ -->
+  <section id="play" class="play" hidden>
+    <div class="panel hud">
+      <div class="lv"><span id="lvIcon" style="font-size:1.8rem">🪐</span><div><b id="lvName">Basamak Gezegeni</b><div class="dots" id="dots"></div></div></div>
+      <div class="mid"><span class="hearts" id="hearts"></span><span class="streak" id="streak" hidden></span></div>
+      <div class="right">
+        <span class="score" id="score">0</span>
+        <button class="icon-btn snd-music" title="Müzik" aria-label="Müziği aç veya kapat">🎵</button>
+        <button class="icon-btn snd-fx" title="Ses efektleri" aria-label="Ses efektlerini aç veya kapat">🔊</button>
+        <button class="icon-btn" id="quitBtn" title="Menüye dön" aria-label="Menüye dön">✕</button>
+      </div>
+    </div>
+    <div class="timer" id="timer"><span class="t" id="tTxt">⏱ 30 sn</span><div class="tbar"><i id="tBar"></i></div></div>
+    <div class="teams" id="teamsBar" hidden></div>
+
+    <div class="stage" id="stage">
+      <div class="moon"></div><div class="planet"></div>
+      <div class="base" id="baseArt"></div>
+      <div class="beam" id="beam"></div>
+      <div class="rescued" id="rescued"></div>
+      <div class="bossbar" id="bossbar" hidden>Mega Pofuduk<div class="hp"><i id="bossHp" style="width:100%"></i></div></div>
+      <div class="alienWrap" id="alienWrap"><span class="aname" id="aName"></span><div class="alien" id="alien"></div></div>
+      <div class="astro" id="astroArt"></div>
+      <div class="say hide" id="say"></div>
+    </div>
+
+    <div class="panel qcard" id="qcard"></div>
+  </section>
+
+  <footer>Türkiye Yüzyılı Maarif Modeli · 5. sınıf matematik · Doğal sayıları okuma, yazma, basamak ve bölük</footer>
+</main>
+
+<div class="modal" id="modal" hidden><div class="panel mbox" id="mbox" role="dialog" aria-modal="true"></div></div>
+
+<script>
+(()=>{
+/* ================= YARDIMCILAR ================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const ri=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cap=s=>s.charAt(0).toLocaleUpperCase("tr-TR")+s.slice(1);
+const fmt=s=>String(s).replace(/\B(?=(\d{3})+(?!\d))/g," ");
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch{return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}};
+
+/* ================= SAYI DİLİ ================= */
+const ONES=["","bir","iki","üç","dört","beş","altı","yedi","sekiz","dokuz"];
+const TENS=["","on","yirmi","otuz","kırk","elli","altmış","yetmiş","seksen","doksan"];
+const GN=["","bin","milyon","milyar"];
+const PLACES=["birler","onlar","yüzler","binler","on binler","yüz binler","milyonlar","on milyonlar","yüz milyonlar"];
+const BOLUK=["birler","binler","milyonlar","milyarlar"];
+function w3(n){const h=Math.floor(n/100),t=Math.floor(n%100/10),u=n%10,o=[];if(h)o.push(h===1?"yüz":ONES[h]+" yüz");if(t)o.push(TENS[t]);if(u)o.push(ONES[u]);return o.join(" ");}
+function groupsOf(s){const g=[];for(let i=s.length;i>0;i-=3)g.push(s.slice(Math.max(0,i-3),i));return g;} // g[0]=birler
+function groupWord(v,gi){if(!v)return"";if(gi===1&&v===1)return"bin";return w3(v)+(GN[gi]?" "+GN[gi]:"");}
+function words(s){s=String(s).replace(/^0+/,"");if(!s)return"sıfır";const g=groupsOf(s),out=[];for(let i=g.length-1;i>=0;i--){const w=groupWord(+g[i],i);if(w)out.push(w);}return out.join(" ");}
+
+/* ================= SORU ÜRETİCİ ================= */
+let USED=new Set();
+function genNum(minD,maxD){
+  for(let k=0;k<600;k++){
+    const len=ri(minD,maxD),a=[ri(1,9)];
+    for(let i=1;i<len;i++)a.push(Math.random()<.24?0:ri(1,9));
+    if(len>=7&&Math.random()<.18){const st=len-6;a[st]=a[st+1]=a[st+2]=0;}          // binler bölüğü tamamen sıfır
+    else if(len>=7&&Math.random()<.1){const st=len-6;a[st]=0;a[st+1]=0;a[st+2]=1;}  // binler bölüğünde yalnız 1
+    const s=a.join("");
+    if(!USED.has(s)){USED.add(s);return s;}
+  }
+  return String(ri(10**(minD-1),10**minD-1));
+}
+function mutants(s,n=3){
+  const out=new Set();let guard=0;
+  while(out.size<n&&guard++<500){
+    const a=s.split(""),r=Math.random();
+    if(r<.34){const i=ri(0,a.length-1),d=ri(0,9);if(i===0&&d===0)continue;a[i]=String(d);}
+    else if(r<.67){const i=ri(0,a.length-2);[a[i],a[i+1]]=[a[i+1],a[i]];}
+    else{const zs=a.map((c,i)=>c==="0"?i:-1).filter(i=>i>0);if(!zs.length)continue;const z=pick(zs);a.splice(z,1);a.splice(ri(1,a.length),0,"0");}
+    const c=a.join("");if(c!==s&&c[0]!=="0"&&c.length===s.length)out.add(c);
+  }
+  let x=BigInt(s);while(out.size<n){x+=BigInt(ri(1,9))*10n**BigInt(ri(0,s.length-2));const c=x.toString();if(c!==s&&c.length===s.length)out.add(c);}
+  return [...out];
+}
+const TYPE_INFO={
+  placeName:{label:"Basamak adı",icon:"🪐"},digitAt:{label:"Basamaktaki rakam",icon:"🪐"},placeValue:{label:"Basamak değeri",icon:"🪐"},
+  read:{label:"Sayı okuma",icon:"🛰️"},write:{label:"Sayı yazma",icon:"⌨️"},
+  boluk:{label:"Bölük",icon:"🌌"},cozumleme:{label:"Çözümleme",icon:"🌌"}
+};
+function makeQ(type,minD,maxD){
+  minD=Math.min(minD,maxD);
+  if(type==="boluk")minD=Math.max(minD,4);
+  if(type==="cozumleme")minD=Math.max(minD,5);
+  if(minD>maxD)maxD=minD;
+  const s=genNum(minD,maxD),L=s.length,q={type,s,show:"num"};
+  if(type==="read"){
+    q.ask="Bu sayı nasıl okunur?";q.long=true;q.ans=s;
+    q.opts=shuffle([s,...mutants(s)]).map(v=>({v,t:words(v)}));
+  }else if(type==="write"){
+    q.ask="Okunuşu verilen sayıyı rakamlarla yaz.";q.show="words";q.ans=s;
+  }else if(type==="placeName"){
+    const p=ri(0,L-1),set=new Set([p]);
+    for(const x of shuffle([p+1,p-1,p+3,p-3,p+2,p-2]))if(x>=0&&x<9&&set.size<4)set.add(x);
+    q.p=p;q.hl=p;q.ask="Parlayan rakam hangi basamakta?";q.ans=String(p);
+    q.opts=shuffle([...set]).map(x=>({v:String(x),t:cap(PLACES[x])}));
+  }else if(type==="digitAt"){
+    const p=ri(0,L-1),d=s[L-1-p],set=new Set([d]);
+    [s[L-p],s[L-2-p]].forEach(x=>{if(x!=null&&set.size<4)set.add(x);});
+    while(set.size<4)set.add(String(ri(0,9)));
+    q.p=p;q.ask=`${cap(PLACES[p])} basamağındaki rakam kaçtır?`;q.ans=d;
+    q.opts=shuffle([...set]).map(v=>({v,t:v}));
+  }else if(type==="placeValue"){
+    const ps=[];for(let p=0;p<L;p++)if(s[L-1-p]!=="0")ps.push(p);
+    const p=pick(ps.length>1?ps.filter(x=>x>0):ps),d=s[L-1-p],val=e=>d+"0".repeat(e);
+    const set=new Set([val(p)]);
+    for(const e of shuffle([p-1,p+1,p+3,p-3,p+2,p-2]))if(e>=0&&e<=8&&set.size<4)set.add(val(e));
+    q.p=p;q.hl=p;q.ask="Parlayan rakamın basamak değeri kaçtır?";q.ans=val(p);
+    q.opts=shuffle([...set]).map(v=>({v,t:fmt(v)}));
+  }else if(type==="boluk"){
+    const g=groupsOf(s),gi=ri(0,g.length-1),sp=x=>x.split("").join(" ");
+    const set=new Set([g[gi]]);
+    g.forEach(x=>{if(set.size<4)set.add(x);});
+    const rev=g[gi].split("").reverse().join("");if(set.size<4)set.add(rev);
+    while(set.size<4)set.add(String(ri(0,999)).padStart(3,"0"));
+    q.gi=gi;q.ask=`${cap(BOLUK[gi])} bölüğündeki rakamlar hangileri?`;q.ans=g[gi];
+    q.opts=shuffle([...set]).map(v=>({v,t:sp(v)}));
+  }else if(type==="cozumleme"){
+    q.show="expr";q.ask="Bu çözümleme hangi sayıyı gösteriyor?";q.ans=s;
+    q.opts=shuffle([s,...mutants(s)]).map(v=>({v,t:fmt(v)}));
+  }
+  return q;
+}
+
+/* ================= KARAKTERLER ================= */
+const ALIENS=[
+  {n:"Pıtırcık",c:"#7ee8a0",eyes:1},{n:"Bıcırık",c:"#ff9ad5",eyes:2},{n:"Zıpzıp",c:"#ffd45e",eyes:3},
+  {n:"Lumi",c:"#8fc4ff",eyes:2},{n:"Gıdı",c:"#c9a2ff",eyes:1},{n:"Fıstık",c:"#ffb07a",eyes:2},
+  {n:"Bonbon",c:"#7ff0f0",eyes:3},{n:"Mırmır",c:"#ffa3a3",eyes:1}
+];
+const BOSS={n:"Mega Pofuduk",c:"#b98cff",eyes:3,boss:true};
+const DK="#2b2350";
+function alienSVG(a,mood="happy"){
+  const c=a.c;
+  const eye=(x,y,r)=>`<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r*1.1}" fill="#fff" stroke="${DK}" stroke-width="3"/>`+
+    `<circle cx="${x+(mood==="sad"?0:1.5)}" cy="${y+(mood==="sad"?r*.35:1)}" r="${r*.55}" fill="${DK}"/><circle cx="${x+r*.3}" cy="${y-r*.25}" r="${Math.max(2,r*.22)}" fill="#fff"/>`;
+  let eyes=a.eyes===1?eye(60,64,17):a.eyes===2?eye(44,66,11)+eye(76,66,11):eye(37,68,8)+eye(60,57,9.5)+eye(83,68,8);
+  const brows=mood==="sad"?(a.eyes===1?`<path d="M44 42 L58 47 M76 42 L62 47" stroke="${DK}" stroke-width="3" stroke-linecap="round"/>`:`<path d="M34 51 L44 55 M86 51 L76 55" stroke="${DK}" stroke-width="3" stroke-linecap="round"/>`):"";
+  const mouth=mood==="sad"?`<path d="M49 99 Q60 89 71 99" fill="none" stroke="${DK}" stroke-width="3.5" stroke-linecap="round"/><path d="M25 76 q-5 9 0 12 q5 -3 0 -12z" fill="#8fdcff" stroke="${DK}" stroke-width="1.5"/>`
+    :mood==="wow"?`<ellipse cx="60" cy="96" rx="7" ry="9" fill="${DK}"/><ellipse cx="60" cy="100" rx="4" ry="3" fill="#ff7aa8"/>`
+    :`<path d="M46 90 Q60 106 74 90 Z" fill="${DK}" stroke="${DK}" stroke-width="3" stroke-linejoin="round"/><path d="M53 97 Q60 103 67 97" fill="#ff7aa8"/>`;
+  const armsUp=mood==="happy"||mood==="wow";
+  const arms=armsUp?`<ellipse cx="13" cy="70" rx="7" ry="13" transform="rotate(35 13 70)" fill="${c}" stroke="${DK}" stroke-width="3"/><ellipse cx="107" cy="70" rx="7" ry="13" transform="rotate(-35 107 70)" fill="${c}" stroke="${DK}" stroke-width="3"/>`
+    :`<ellipse cx="15" cy="94" rx="7" ry="12" transform="rotate(-20 15 94)" fill="${c}" stroke="${DK}" stroke-width="3"/><ellipse cx="105" cy="94" rx="7" ry="12" transform="rotate(20 105 94)" fill="${c}" stroke="${DK}" stroke-width="3"/>`;
+  const ant=a.boss?`<path d="M36 30 l7 -18 l17 12 l17 -12 l7 18 z" fill="#ffd45e" stroke="${DK}" stroke-width="3" stroke-linejoin="round"/><circle cx="60" cy="18" r="4" fill="#ff8fd0"/>`
+    :`<path d="M46 30 Q41 16 33 10" fill="none" stroke="${DK}" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="9" r="6" fill="#ffe36e" stroke="${DK}" stroke-width="3"/><path d="M74 30 Q79 16 87 10" fill="none" stroke="${DK}" stroke-width="3" stroke-linecap="round"/><circle cx="88" cy="9" r="6" fill="#ffe36e" stroke="${DK}" stroke-width="3"/>`;
+  return `<svg viewBox="0 0 120 134" aria-hidden="true">${arms}
+    <ellipse cx="44" cy="124" rx="11" ry="7" fill="${c}" stroke="${DK}" stroke-width="3"/><ellipse cx="76" cy="124" rx="11" ry="7" fill="${c}" stroke="${DK}" stroke-width="3"/>
+    ${ant}
+    <path d="M60 24 C96 24 108 52 108 80 C108 109 88 124 60 124 C32 124 12 109 12 80 C12 52 24 24 60 24Z" fill="${c}" stroke="${DK}" stroke-width="3.5"/>
+    <ellipse cx="60" cy="104" rx="26" ry="14" fill="#ffffff55"/>
+    <ellipse cx="38" cy="38" rx="9" ry="5" transform="rotate(-30 38 38)" fill="#ffffff66"/>
+    <g class="eyes">${eyes}</g>${brows}
+    <ellipse cx="30" cy="88" rx="7" ry="4" fill="#ff6fa5" opacity=".55"/><ellipse cx="90" cy="88" rx="7" ry="4" fill="#ff6fa5" opacity=".55"/>
+    ${mouth}</svg>`;
+}
+const ASTRO=`<svg viewBox="0 0 100 132" aria-hidden="true">
+  <rect x="22" y="58" width="56" height="44" rx="14" fill="#b9c3ff" stroke="${DK}" stroke-width="3"/>
+  <rect x="26" y="64" width="48" height="50" rx="18" fill="#fff" stroke="${DK}" stroke-width="3"/>
+  <rect x="38" y="74" width="24" height="16" rx="5" fill="#33287f" stroke="${DK}" stroke-width="2"/>
+  <circle cx="44" cy="82" r="3" fill="#6ff0c0" class="blink"/><circle cx="51" cy="82" r="3" fill="#ffd45e" class="blink b2"/><circle cx="58" cy="82" r="3" fill="#ff8fd0" class="blink"/>
+  <rect x="31" y="110" width="15" height="18" rx="6" fill="#fff" stroke="${DK}" stroke-width="3"/><rect x="54" y="110" width="15" height="18" rx="6" fill="#fff" stroke="${DK}" stroke-width="3"/>
+  <ellipse cx="18" cy="80" rx="8" ry="14" transform="rotate(25 18 80)" fill="#fff" stroke="${DK}" stroke-width="3"/>
+  <ellipse cx="84" cy="70" rx="8" ry="14" transform="rotate(-40 84 70)" fill="#fff" stroke="${DK}" stroke-width="3"/>
+  <line x1="50" y1="8" x2="50" y2="0" stroke="${DK}" stroke-width="3"/><circle cx="50" cy="2" r="4" fill="#ff6b7f" class="blink"/>
+  <circle cx="50" cy="38" r="31" fill="#fff" stroke="${DK}" stroke-width="3.5"/>
+  <ellipse cx="50" cy="40" rx="23" ry="19" fill="#1d2a6b" stroke="${DK}" stroke-width="3"/>
+  <circle cx="42" cy="38" r="3.5" fill="#fff"/><circle cx="58" cy="38" r="3.5" fill="#fff"/>
+  <path d="M43 47 Q50 53 57 47" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="36" cy="46" rx="4" ry="2.5" fill="#ff8fd0" opacity=".7"/><ellipse cx="64" cy="46" rx="4" ry="2.5" fill="#ff8fd0" opacity=".7"/>
+  <path d="M33 30 Q38 24 46 25" fill="none" stroke="#ffffff88" stroke-width="3" stroke-linecap="round"/>
+</svg>`;
+const BASE=`<svg viewBox="0 0 240 92" aria-hidden="true">
+  <rect x="2" y="30" width="62" height="26" rx="4" fill="#3f5bd6" stroke="${DK}" stroke-width="3"/>
+  <path d="M17 30v26M33 30v26M48 30v26M2 43h62" stroke="#8fb0ff" stroke-width="1.5"/>
+  <rect x="176" y="30" width="62" height="26" rx="4" fill="#3f5bd6" stroke="${DK}" stroke-width="3"/>
+  <path d="M192 30v26M207 30v26M223 30v26M176 43h62" stroke="#8fb0ff" stroke-width="1.5"/>
+  <rect x="62" y="39" width="116" height="8" fill="#c9c6e8" stroke="${DK}" stroke-width="3"/>
+  <ellipse cx="120" cy="54" rx="58" ry="22" fill="#e9ebff" stroke="${DK}" stroke-width="3.5"/>
+  <ellipse cx="120" cy="54" rx="72" ry="10" fill="none" stroke="#ffd45e" stroke-width="4" opacity=".85"/>
+  <path d="M90 42 Q120 0 150 42 Z" fill="#8fe8ff" stroke="${DK}" stroke-width="3"/>
+  <path d="M104 30 Q112 20 122 19" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="90" cy="58" r="4" fill="#ff8fd0" class="blink"/><circle cx="106" cy="62" r="4" fill="#6ff0c0" class="blink b2"/>
+  <circle cx="134" cy="62" r="4" fill="#ffd45e" class="blink"/><circle cx="150" cy="58" r="4" fill="#7cc8ff" class="blink b2"/>
+  <rect x="108" y="72" width="24" height="10" rx="4" fill="#6ff0c0" stroke="${DK}" stroke-width="3"/>
+</svg>`;
+$("#baseArt").innerHTML=BASE;
+$("#astroArt").innerHTML=`<div class="bob">${ASTRO}</div>`;
+$("#crew").innerHTML=[ALIENS[0],ALIENS[1],ALIENS[2]].map((a,i)=>`<div class="m"><div class="bob" style="animation-delay:${-i*.7}s">${alienSVG(a,i===1?"wow":"happy")}</div></div>`).join("")+`<div class="m"><div class="bob" style="animation-delay:-1.4s">${ASTRO}</div></div>`;
+
+/* ================= SES ================= */
+const SND={music:store.get("gsu_music",true),fx:store.get("gsu_fx",true),ctx:null,master:null};
+function ac(){
+  try{
+    if(!SND.ctx){SND.ctx=new (window.AudioContext||window.webkitAudioContext)();SND.master=SND.ctx.createGain();SND.master.gain.value=.9;SND.master.connect(SND.ctx.destination);}
+    if(SND.ctx.state==="suspended")SND.ctx.resume();
+    return SND.ctx;
+  }catch{return null;}
+}
+function tone(f,t,d,type="sine",vol=.15,to=null){
+  const c=SND.ctx;if(!c)return;
+  const o=c.createOscillator(),g=c.createGain();
+  o.type=type;o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+d);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g);g.connect(SND.master);o.start(t);o.stop(t+d+.05);
+}
+const sfx={
+  play(fn){if(!SND.fx)return;const c=ac();if(c)fn(c.currentTime);},
+  click(){this.play(t=>tone(660,t,.06,"sine",.08));},
+  key(){this.play(t=>tone(880+ri(0,200),t,.05,"triangle",.07));},
+  correct(){this.play(t=>[523,659,784,1047].forEach((f,i)=>tone(f,t+i*.07,.18,"triangle",.14)));},
+  beam(){this.play(t=>{tone(300,t,.9,"sine",.09,1400);tone(450,t+.1,.8,"triangle",.05,1800);});},
+  wrong(){this.play(t=>{tone(330,t,.22,"square",.06,250);tone(250,t+.22,.35,"square",.06,170);});},
+  timeout(){this.play(t=>{tone(700,t,.5,"sawtooth",.05,120);});},
+  tick(){this.play(t=>tone(1250,t,.035,"square",.04));},
+  alien(){this.play(t=>{const b=ri(500,700);tone(b,t,.12,"sine",.12,b*1.6);tone(b*1.5,t+.12,.14,"sine",.1,b*.9);});},
+  life(){this.play(t=>[784,988,1319].forEach((f,i)=>tone(f,t+i*.09,.2,"sine",.12)));},
+  level(){this.play(t=>[523,659,784,659,784,1047].forEach((f,i)=>tone(f,t+i*.11,.25,"triangle",.13)));},
+  win(){this.play(t=>[523,523,659,784,659,784,1047,1047].forEach((f,i)=>{tone(f,t+i*.14,.3,"triangle",.13);tone(f/2,t+i*.14,.3,"sine",.06);}));},
+  lose(){this.play(t=>[523,466,415,349].forEach((f,i)=>tone(f,t+i*.22,.35,"triangle",.12)));}
+};
+/* arka plan müziği: küçük bir uzay ezgisi */
+const MEL=[0,7,12,7,9,7,4,2, 0,4,7,9,12,9,7,4, 5,9,12,9,7,4,2,4, 0,4,7,4,2,-1,0,null];
+const BASS=[0,-3,-7,-5];
+let mTimer=null,mNext=0,mStep=0;
+function musicStart(){
+  if(!SND.music||mTimer)return;const c=ac();if(!c)return;
+  mNext=c.currentTime+.1;
+  mTimer=setInterval(()=>{
+    while(mNext<c.currentTime+.35){
+      const n=MEL[mStep%MEL.length],base=392;
+      if(n!=null)tone(base*2**(n/12),mNext,.24,"triangle",.03);
+      if(mStep%8===0)tone(base/4*2**(BASS[Math.floor(mStep/8)%4]/12),mNext,1.9,"sine",.06);
+      if(mStep%4===2)tone(base*4,mNext,.03,"sine",.008);
+      mNext+=.22;mStep++;
+    }
+  },90);
+}
+function musicStop(){clearInterval(mTimer);mTimer=null;}
+function syncSoundBtns(){$$(".snd-music").forEach(b=>b.classList.toggle("off",!SND.music));$$(".snd-fx").forEach(b=>{b.classList.toggle("off",!SND.fx);b.textContent=SND.fx?"🔊":"🔇";});}
+$$(".snd-music").forEach(b=>b.addEventListener("click",()=>{SND.music=!SND.music;store.set("gsu_music",SND.music);SND.music?musicStart():musicStop();syncSoundBtns();}));
+$$(".snd-fx").forEach(b=>b.addEventListener("click",()=>{SND.fx=!SND.fx;store.set("gsu_fx",SND.fx);syncSoundBtns();sfx.click();}));
+syncSoundBtns();
+document.addEventListener("pointerdown",()=>{ac();musicStart();},{once:true});
+
+/* sesli okuma (tarayıcı destekliyorsa) */
+const canSpeak="speechSynthesis" in window;
+function speak(text){
+  if(!canSpeak)return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang="tr-TR";u.rate=.85;
+    const v=speechSynthesis.getVoices().find(v=>/^tr/i.test(v.lang));if(v)u.voice=v;speechSynthesis.speak(u);}catch{}
+}
+
+/* ================= GÖKYÜZÜ ve KONFETİ ================= */
+const sky=$("#sky"),sctx=sky.getContext("2d"),fxc=$("#fx"),fctx=fxc.getContext("2d");
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let stars=[],shoot=null,parts=[],dpr=1;
+function sizeCanvas(){dpr=Math.min(2,devicePixelRatio||1);[sky,fxc].forEach(c=>{c.width=innerWidth*dpr;c.height=innerHeight*dpr;});
+  stars=[...Array(Math.round(innerWidth*innerHeight/6000))].map(()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.6+.3,p:Math.random()*6,s:Math.random()*.03+.01,c:pick(["#ffffff","#ffffff","#bfe3ff","#ffe7a8","#ffc7ea"])}));}
+addEventListener("resize",sizeCanvas);sizeCanvas();
+function confetti(n=120,x=innerWidth/2,y=innerHeight*.35){
+  if(reduce)n=Math.min(n,25);
+  for(let i=0;i<n;i++)parts.push({x,y,vx:(Math.random()-.5)*13,vy:-Math.random()*12-3,life:1,c:pick(["#ffd45e","#6ff0c0","#ff8fd0","#7cc8ff","#c9a2ff"]),s:ri(6,11),r:Math.random()*6,vr:(Math.random()-.5)*.3,star:Math.random()<.35});
+}
+function sparkleAt(el,n=40){const r=el.getBoundingClientRect();confetti(n,r.left+r.width/2,r.top+r.height/3);}
+function starPath(c,x,y,s){c.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,rr=i%2?s*.45:s;c.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);}c.closePath();c.fill();}
+let lastT=0;
+function frame(t){
+  const dt=Math.min(50,t-lastT||16)/16.67;lastT=t;
+  sctx.setTransform(dpr,0,0,dpr,0,0);sctx.clearRect(0,0,innerWidth,innerHeight);
+  for(const s of stars){s.p+=s.s*dt;sctx.globalAlpha=.35+Math.sin(s.p)*.35+.3;sctx.fillStyle=s.c;sctx.beginPath();sctx.arc(s.x,s.y,s.r,0,6.283);sctx.fill();}
+  if(!reduce){
+    if(!shoot&&Math.random()<.004)shoot={x:Math.random()*innerWidth,y:Math.random()*innerHeight*.4,vx:9,vy:4,l:1};
+    if(shoot){sctx.globalAlpha=shoot.l;const g=sctx.createLinearGradient(shoot.x,shoot.y,shoot.x-90,shoot.y-40);g.addColorStop(0,"#fff");g.addColorStop(1,"#fff0");sctx.strokeStyle=g;sctx.lineWidth=2;sctx.beginPath();sctx.moveTo(shoot.x,shoot.y);sctx.lineTo(shoot.x-90,shoot.y-40);sctx.stroke();shoot.x+=shoot.vx*dt;shoot.y+=shoot.vy*dt;shoot.l-=.012*dt;if(shoot.l<=0)shoot=null;}
+  }
+  sctx.globalAlpha=1;
+  fctx.setTransform(dpr,0,0,dpr,0,0);fctx.clearRect(0,0,innerWidth,innerHeight);
+  for(const p of parts){p.vy+=.32*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.99;p.r+=p.vr*dt;p.life-=.009*dt;
+    fctx.globalAlpha=Math.max(0,p.life);fctx.fillStyle=p.c;
+    if(p.star)starPath(fctx,p.x,p.y,p.s*.8);else{fctx.save();fctx.translate(p.x,p.y);fctx.rotate(p.r);fctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);fctx.restore();}}
+  parts=parts.filter(p=>p.life>0&&p.y<innerHeight+40);fctx.globalAlpha=1;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ================= AYARLAR ================= */
+const DIFF={caylak:{n:"Çaylak",max:7,time:40},kasif:{n:"Kaşif",max:8,time:30},kaptan:{n:"Kaptan",max:9,time:20}};
+let diff=store.get("gsu_diff","kasif");if(!DIFF[diff])diff="kasif";
+function syncDiff(){$$("#diffSeg button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.d===diff)));const best=store.get("gsu_best",0);$("#bestLbl").textContent=best?`🏆 Rekor: ${best}`:"";}
+$$("#diffSeg button").forEach(b=>b.addEventListener("click",()=>{diff=b.dataset.d;store.set("gsu_diff",diff);syncDiff();sfx.click();}));
+syncDiff();
+
+const LEVELS=[
+  {name:"Basamak Gezegeni",icon:"🪐",types:["placeName","digitAt","placeValue"],min:4,max:6,count:6,
+   intro:"Sayılarda her rakamın bir basamağı ve bir değeri var. Basamakları sağdan sola sayıyoruz: birler, onlar, yüzler, binler..."},
+  {name:"Okuma Uydusu",icon:"🛰️",types:["read"],min:5,max:7,count:6,
+   intro:"Sayıyı sağdan üçerli bölüklere ayır, soldan başlayarak oku. Tamamı sıfır olan bölüğün adı okunmaz!"},
+  {name:"Yazma İstasyonu",icon:"⌨️",types:["write"],min:5,max:8,count:6,
+   intro:"Okunuşu oku ya da 🔊 ile dinle, sayıyı tuşla yaz. Okunmayan bölüğe 0 0 0 yazmayı unutma!"},
+  {name:"Bölük Nebulası",icon:"🌌",types:["boluk","cozumleme","placeValue"],min:6,max:9,count:6,
+   intro:"Birler, binler, milyonlar... Her bölükte üç basamak var: yüzler, onlar, birler. Çözümlemede her rakamı basamak değeriyle yazarız."}
+];
+const BOSS_LV={name:"Mega Pofuduk",icon:"👾",types:["read","write","placeValue","boluk","cozumleme","placeName"],min:7,max:9,need:5};
+const TOPICS={basamak:["placeName","digitAt","placeValue"],okuma:["read"],yazma:["write"],boluk:["boluk","cozumleme"]};
+const SAY={
+  ok:["Süpersin!","Işınlama başarılı!","Harika iş, kaşif!","Uzaylılar sana bayıldı!","Matematik motorları tam güç!","Vay canına, çok hızlısın!"],
+  no:["Hay aksi! Bölüklere bir daha bakalım.","Sorun değil, birlikte öğreniyoruz.","Az kaldı! Tabloyu incele."],
+  to:["Süre bitti! Uzaylı korkup kaçtı.","Oksijen bitti... Bir dahakine daha hızlı!"],
+  hi:["Hadi kaşif, yapabilirsin!","Önce bölüklere ayır!","Rakamları sağdan say!","Sakin ol, dikkatle bak."]
+};
+
+/* ================= OYUN DURUMU ================= */
+let G=null,timer=null,sayT=null;
+function show(id){["#menu","#gsetup","#play"].forEach(s=>$(s).hidden=s!==id);window.scrollTo({top:0});}
+function say(t,ms=3200){const el=$("#say");el.textContent=t;el.classList.remove("hide");clearTimeout(sayT);sayT=setTimeout(()=>el.classList.add("hide"),ms);}
+function modal(html,onBtn){
+  const m=$("#modal"),b=$("#mbox");b.innerHTML=html;m.hidden=false;
+  b.querySelectorAll("[data-act]").forEach(x=>x.addEventListener("click",()=>{sfx.click();m.hidden=true;onBtn&&onBtn(x.dataset.act);}));
+  const f=b.querySelector(".btn");f&&f.focus();
+}
+function closeModal(){$("#modal").hidden=true;}
+
+/* ---------- Tek oyuncu ---------- */
+$("#soloBtn").addEventListener("click",()=>{sfx.click();startSolo();});
+function startSolo(){
+  USED=new Set();
+  G={mode:"solo",lv:0,qi:0,lives:3,score:0,streak:0,rescued:0,hints:3,lvRes:[],bossHp:BOSS_LV.need,boss:false,lastType:null};
+  $("#teamsBar").hidden=true;$("#rescued").innerHTML="";$("#bossbar").hidden=true;
+  show("#play");hud();levelIntro();
+}
+function levelIntro(){
+  const L=LEVELS[G.lv];
+  hud();setAlien(pick(ALIENS),"happy",true);
+  modal(`<div class="eyebrow">${G.lv+1}. durak</div><div style="font-size:3.4rem;line-height:1">${L.icon}</div><h2>${L.name}</h2><p>${L.intro}</p>
+    <p style="color:var(--ink)">${L.count} uzaylıyı üsse ışınla!</p><button class="btn mint" data-act="go">Başla!</button>`,()=>{say(pick(SAY.hi));nextQ();});
+}
+function bossIntro(){
+  G.boss=true;G.bossHp=BOSS_LV.need;$("#bossbar").hidden=false;$("#bossHp").style.width="100%";hud();
+  setAlien(BOSS,"wow",true);sfx.alien();
+  modal(`<div class="eyebrow">Son görev</div><div class="art">${alienSVG(BOSS,"wow")}</div><h2>Mega Pofuduk geldi!</h2>
+    <p>Kocaman ama çok tatlı! Sayı kristallerini yutmuş. ${BOSS_LV.need} doğru cevapla kristalleri geri al ve onu da üsse ışınla.</p>
+    <button class="btn pink" data-act="go">Meydan okumayı kabul et!</button>`,()=>{say("Bütün öğrendiklerini kullan!");nextQ();});
+}
+
+/* ---------- Grup ---------- */
+$("#groupBtn").addEventListener("click",()=>{sfx.click();show("#gsetup");renderTeamInputs();});
+$("#gBack").addEventListener("click",()=>{sfx.click();show("#menu");});
+const TEAM_DEF=[{n:"Pıtırcık Takımı",a:0},{n:"Bıcırık Takımı",a:1},{n:"Zıpzıp Takımı",a:2},{n:"Lumi Takımı",a:3}];
+function renderTeamInputs(){
+  const n=+$("#gCount").value,box=$("#gTeams"),old=[...box.querySelectorAll("input")].map(i=>i.value);
+  box.innerHTML="";
+  for(let i=0;i<n;i++){const d=TEAM_DEF[i];
+    box.insertAdjacentHTML("beforeend",`<div class="team-in"><div class="av">${alienSVG(ALIENS[d.a])}</div><div class="field" style="flex:1"><label for="gt${i}">Takım ${i+1}</label><input id="gt${i}" maxlength="20" value="${esc(old[i]??d.n)}"></div></div>`);}
+}
+$("#gCount").addEventListener("change",renderTeamInputs);
+$$("#gTopics .chip-t").forEach(b=>b.addEventListener("click",()=>{
+  const on=b.getAttribute("aria-pressed")==="true";
+  if(on&&$$('#gTopics [aria-pressed="true"]').length===1)return;
+  b.setAttribute("aria-pressed",String(!on));sfx.click();
+}));
+$("#gStart").addEventListener("click",()=>{
+  sfx.click();USED=new Set();
+  const n=+$("#gCount").value;
+  const types=$$('#gTopics [aria-pressed="true"]').flatMap(b=>TOPICS[b.dataset.t]);
+  G={mode:"group",teams:[...Array(n)].map((_,i)=>({name:$("#gt"+i).value.trim()||TEAM_DEF[i].n,a:ALIENS[TEAM_DEF[i].a],score:0,right:0,streak:0,hints:1})),
+     rounds:+$("#gRounds").value,types,turn:0,qn:0,streak:0,lastType:null};
+  $("#rescued").innerHTML="";$("#bossbar").hidden=true;$("#teamsBar").hidden=false;
+  show("#play");hud();turnIntro();
+});
+function turnIntro(){
+  const t=G.teams[G.turn],round=Math.floor(G.qn/G.teams.length)+1;
+  hud();setAlien(t.a,"happy",true);
+  modal(`<div class="eyebrow">Tur ${round} / ${G.rounds}</div><div class="art">${alienSVG(t.a,"wow")}</div><h2>Sıra: ${esc(t.name)}</h2>
+    <p>Hazır olduğunuzda başlayın. Süre başlar başlamaz soru gelecek!</p><button class="btn pink" data-act="go">Hazırız!</button>`,()=>nextQ());
+}
+
+/* ---------- HUD ---------- */
+function hud(){
+  if(G.mode==="solo"){
+    const L=G.boss?BOSS_LV:LEVELS[G.lv];
+    $("#lvIcon").textContent=L.icon;$("#lvName").textContent=L.name;
+    const cnt=G.boss?BOSS_LV.need:L.count;
+    $("#dots").innerHTML=[...Array(cnt)].map((_,i)=>{const r=G.lvRes[i];return `<i class="${r===true?"ok":r===false?"no":i===G.lvRes.length?"now":""}"></i>`;}).join("");
+    $("#hearts").hidden=false;
+    $("#hearts").textContent="❤️".repeat(Math.max(0,G.lives))+"🤍".repeat(Math.max(0,3-G.lives));
+    $("#score").textContent=G.score;
+  }else{
+    const round=Math.min(G.rounds,Math.floor(G.qn/G.teams.length)+1);
+    $("#lvIcon").textContent="👾";$("#lvName").textContent=`Grup Yarışı · Tur ${round}/${G.rounds}`;
+    $("#dots").innerHTML="";$("#hearts").hidden=true;
+    const t=G.teams[G.turn];$("#score").textContent=t.score;
+    $("#teamsBar").innerHTML=G.teams.map((x,i)=>`<div class="tchip ${i===G.turn?"on":""}"><div class="av">${alienSVG(x.a)}</div><div style="min-width:0"><b>${esc(x.name)}</b><span>${x.score}</span></div></div>`).join("");
+  }
+  const st=G.mode==="solo"?G.streak:G.teams[G.turn].streak;
+  const sEl=$("#streak");sEl.hidden=st<2;sEl.textContent=`🔥 Seri ${st}${mult(st)>1?" · x"+mult(st):""}`;
+}
+const mult=s=>s>=6?3:s>=3?2:1;
+
+/* ---------- Sahne ---------- */
+function setAlien(a,mood,enter){
+  G.alien=a;
+  const wrap=$("#alienWrap"),el=$("#alien");
+  wrap.classList.toggle("boss",!!a.boss);
+  $("#aName").textContent=a.n;
+  el.className="alien";void el.offsetWidth;if(enter)el.classList.add("enter");
+  el.innerHTML=`<div class="bob">${alienSVG(a,mood)}</div>`;
+}
+function alienMood(m){$("#alien .bob").innerHTML=alienSVG(G.alien,m);}
+function floatPts(txt,bad){const e=document.createElement("div");e.className="float-pts"+(bad?" bad":"");e.textContent=txt;$("#stage").appendChild(e);setTimeout(()=>e.remove(),1300);}
+function addRescued(a){const d=document.createElement("div");d.className="r pop";d.innerHTML=alienSVG(a);$("#rescued").appendChild(d);
+  const all=$("#rescued").children;if(all.length>24)all[0].remove();}
+
+/* ---------- Soru ---------- */
+function nextQ(){
+  closeModal();
+  let types,minD,maxD,cap=DIFF[diff].max;
+  if(G.mode==="solo"){const L=G.boss?BOSS_LV:LEVELS[G.lv];types=L.types;minD=L.min;maxD=Math.min(L.max,cap);}
+  else{types=G.types;minD=4;maxD=cap;}
+  let type=pick(types);if(types.length>1&&type===G.lastType)type=pick(types.filter(x=>x!==type));G.lastType=type;
+  G.q=makeQ(type,Math.min(minD,maxD),maxD);G.locked=false;G.typed="";
+  if(G.mode==="group")setAlien(pick(ALIENS),"happy",true);
+  else if(!G.boss)setAlien(pick(ALIENS),"happy",true);
+  else setAlien(BOSS,"wow",false);
+  sfx.alien();renderQ();hud();
+  let secs=DIFF[diff].time;if(type==="write")secs+=10;if(type==="read")secs+=5;
+  startTimer(secs);
+}
+function numHTML(s,hl){const L=s.length;return s.split("").map((c,i)=>{const p=L-1-i;return `<span class="d${p===hl?" hl":""}${p%3===0&&p>0?" gap":""}">${c}</span>`;}).join("");}
+function exprHTML(s){const L=s.length,t=[];for(let i=0;i<L;i++){const p=L-1-i;if(s[i]!=="0")t.push(`<span class="term">${fmt(s[i]+"0".repeat(p))}</span>`);}return t.join('<span class="plus">+</span>');}
+function renderQ(){
+  const q=G.q,info=TYPE_INFO[q.type],box=$("#qcard");
+  let disp="";
+  if(q.show==="num")disp=`<div class="numdisp" aria-label="${fmt(q.s)}">${numHTML(q.s,q.hl)}</div>`;
+  else if(q.show==="words")disp=`<div class="wordsdisp">“${esc(words(q.s))}”</div>`;
+  else disp=`<div class="exprdisp">${exprHTML(q.s)}</div>`;
+  const hintsLeft=G.mode==="solo"?G.hints:G.teams[G.turn].hints;
+  const tools=`<div class="qtools">${q.type==="write"&&canSpeak?'<button class="btn ghost small" id="listenBtn">🔊 Dinle</button>':""}<button class="btn ghost small" id="hintBtn" ${hintsLeft?"":"disabled"}>💡 İpucu (${hintsLeft})</button></div>`;
+  let body="";
+  if(q.type==="write"){
+    body=`<div class="typed" id="typed"></div>
+      <div class="keypad" id="keypad">${[1,2,3,4,5,6,7,8,9,0].map(n=>`<button data-k="${n}">${n}</button>`).join("")}
+        <button class="wide" data-k="del">⌫ Sil</button><button class="wide" data-k="clr">Temizle</button><button class="wide go" data-k="ok">✓ Gönder</button></div>`;
+  }else{
+    body=`<div class="answers ${q.long?"long":""}" id="answers">${q.opts.map((o,i)=>`<button class="ans" data-v="${o.v}"><span class="k">${i+1}</span>${esc(o.t)}</button>`).join("")}</div>`;
+  }
+  box.innerHTML=`<div class="qtop"><span class="qchip">${info.icon} ${info.label}</span>${tools}</div>
+    <p class="ask">${q.ask}</p>${disp}${body}<div id="fbox"></div>`;
+  if(q.type==="write"){
+    $("#keypad").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>keyIn(b.dataset.k)));
+    drawTyped();
+    if($("#listenBtn"))$("#listenBtn").addEventListener("click",()=>speak(words(q.s)));
+  }else{
+    $("#answers").querySelectorAll(".ans").forEach(b=>b.addEventListener("click",()=>choose(b)));
+  }
+  $("#hintBtn").addEventListener("click",useHint);
+}
+function drawTyped(){const el=$("#typed");if(!el)return;el.innerHTML=G.typed?`${fmt(G.typed)}<span class="caret"></span>`:`<span class="ph">Sayıyı tuşla</span><span class="caret"></span>`;}
+function keyIn(k){
+  if(G.locked)return;
+  if(k==="ok"){if(G.typed)answer(G.typed.replace(/^0+/,"")===G.q.ans,G.typed);return;}
+  if(k==="del")G.typed=G.typed.slice(0,-1);
+  else if(k==="clr")G.typed="";
+  else if(/^\d$/.test(k)&&G.typed.length<12){if(!(G.typed===""&&k==="0"))G.typed+=k;}
+  sfx.key();drawTyped();
+}
+function choose(btn){if(G.locked)return;answer(btn.dataset.v===G.q.ans,btn.dataset.v,btn);}
+
+function useHint(){
+  const t=G.mode==="solo"?G:G.teams[G.turn];
+  if(!t.hints||G.locked)return;t.hints--;sfx.click();
+  const q=G.q;let html="";
+  if(q.type==="write")html=`<p>Okunuşu bölüklere ayır. Her bölüğü üç basamakla yaz:</p>${bolukTable(q.s,{hide:true,words:true})}`;
+  else if(q.type==="read")html=`<p>Sayıyı bölüklere ayırdım. Her bölüğü sırayla oku:</p>${bolukTable(q.s,{})}`;
+  else if(q.type==="cozumleme")html=`<p>Her terimin sondaki sıfırlarını say. Kaç sıfır varsa rakam o kadar sola gider. Boş kalan basamaklara 0 yaz.</p>`;
+  else if(q.type==="boluk")html=`<p>Sayıyı sağdan başlayarak üçerli ayır: ilk üçlü birler, sonraki binler, sonraki milyonlar bölüğü.</p>`;
+  else html=`<p>Basamakları sağdan sola say: birler, onlar, yüzler, binler, on binler, yüz binler, milyonlar...</p>${bolukTable(q.s,{hl:q.type==="digitAt"?undefined:q.hl,noDigits:q.type==="digitAt"})}`;
+  $("#fbox").innerHTML=`<div class="fb hint"><h3>💡 Astronot Ada'dan ipucu</h3>${html}</div>`;
+  $("#hintBtn").disabled=true;$("#hintBtn").textContent=`💡 İpucu (${t.hints})`;
+  say(pick(SAY.hi));
+}
+
+/* bölük tablosu */
+function bolukTable(s,o={}){
+  const L=s.length,ng=Math.ceil(L/3),pad=s.padStart(ng*3," ");
+  let h1="",h2="",row="",wr="";
+  for(let g=ng-1;g>=0;g--){
+    const gs=o.group===g?" gs":"";
+    h1+=`<th colspan="3" class="g${gs}">${cap(BOLUK[g])} bölüğü</th>`;
+    for(let k=2;k>=0;k--){
+      const p=g*3+k,i=ng*3-1-p,c=pad[i];
+      h2+=`<th class="${gs}">${PLACES[p]}</th>`;
+      const cls=c===" "?"e":(p===o.hl?"hl":"")+gs;
+      row+=`<td class="${cls}">${c===" "?"":o.hide?"?":o.noDigits?"":c}</td>`;
+    }
+    if(o.words){const v=+s.slice(Math.max(0,L-3*(g+1)),L-3*g);wr+=`<td colspan="3" class="w${v?"":" z"}">${v?groupWord(v,g):"okunmaz"}</td>`;}
+  }
+  return `<div class="btwrap"><table class="bt"><thead><tr>${h1}</tr><tr>${h2}</tr></thead><tbody><tr>${row}</tr>${o.words?`<tr>${wr}</tr>`:""}</tbody></table></div>`;
+}
+function explain(q){
+  const s=q.s,L=s.length,g=groupsOf(s);
+  const notes=[];
+  g.forEach((x,i)=>{if(i>0&&i<g.length-1&&+x===0)notes.push(`Tamamı sıfır olan ${BOLUK[i]} bölüğünün adı okunmaz.`);});
+  if(g.length>1&&+g[1]===1)notes.push(`Binler bölüğünde yalnızca 1 varsa “bir bin” değil “bin” deriz.`);
+  const W=`<b>${fmt(s)}</b> → “${esc(words(s))}”`;
+  switch(q.type){
+    case "read":case "write":return `<p>${W}</p>${notes.map(n=>`<p>⭐ ${n}</p>`).join("")}${bolukTable(s,{words:true})}`;
+    case "placeName":return `<p><b>${s[L-1-q.p]}</b> rakamı <b>${PLACES[q.p]}</b> basamağında.</p>${bolukTable(s,{hl:q.p})}`;
+    case "digitAt":return `<p>${cap(PLACES[q.p])} basamağındaki rakam <b>${s[L-1-q.p]}</b>.</p>${bolukTable(s,{hl:q.p})}`;
+    case "placeValue":{const d=s[L-1-q.p];return `<p><b>${d}</b> rakamı ${PLACES[q.p]} basamağında. Basamak değeri: ${d} × ${fmt("1"+"0".repeat(q.p))} = <b>${fmt(q.ans)}</b></p>${bolukTable(s,{hl:q.p})}`;}
+    case "boluk":return `<p>${cap(BOLUK[q.gi])} bölüğünde <b>${q.ans.split("").join(" ")}</b> rakamları var.</p>${bolukTable(s,{group:q.gi,words:true})}`;
+    case "cozumleme":return `<p>${exprHTML(s).replace(/<[^>]+>/g," ").replace(/\s+/g," ")} = <b>${fmt(s)}</b></p><p>Rakamı olmayan basamaklara 0 yazdık.</p>${bolukTable(s,{words:true})}`;
+  }
+}
+
+/* ---------- Cevap ---------- */
+function answer(ok,given,btn,timedOut=false){
+  if(G.locked)return;G.locked=true;stopTimer();
+  const q=G.q,left=G.tLeft;
+  $$("#answers .ans").forEach(b=>{b.disabled=true;if(b.dataset.v===q.ans)b.classList.add("ok");else if(b!==btn)b.classList.add("dim");});
+  if(btn&&!ok)btn.classList.add("no");
+  if($("#keypad"))$$("#keypad button").forEach(b=>b.disabled=true);
+  if($("#hintBtn"))$("#hintBtn").disabled=true;
+  const who=G.mode==="solo"?G:G.teams[G.turn];
+  let title,cls,extra="";
+  if(ok){
+    who.streak++;if(G.mode==="group")who.right++;
+    const pts=Math.round((100+Math.ceil(left)*4)*mult(who.streak))+(G.boss?100:0);
+    who.score+=pts;floatPts("+"+pts);
+    alienMood("happy");sfx.correct();
+    setTimeout(()=>{$("#beam").classList.add("on");sfx.beam();
+      if(!(G.boss&&G.bossHp>0))$("#alien").classList.add("up");
+      sparkleAt($("#alienWrap"),45);},250);
+    setTimeout(()=>$("#beam").classList.remove("on"),1500);
+    if(G.mode==="solo"){
+      G.lvRes.push(true);
+      if(G.boss){G.bossHp--;$("#bossHp").style.width=(G.bossHp/BOSS_LV.need*100)+"%";}
+      else{G.rescued++;setTimeout(()=>addRescued(G.alien),1300);}
+      if(G.streak>0&&G.streak%5===0&&G.lives<5){G.lives++;extra=`<p>❤️ 5 doğru üst üste: <b>Ekstra can!</b></p>`;setTimeout(()=>sfx.life(),700);}
+    }
+    title=G.boss?(G.bossHp>0?`Kristal geri alındı! Mega Pofuduk’un ${G.bossHp} kristali kaldı.`:"Son kristal de alındı!"):`${pick(["Harika!","Süper!","Muhteşem!","Bravo!"])} ${G.alien.n} üsse ışınlandı!`;
+    cls="ok";say(pick(SAY.ok));
+  }else{
+    who.streak=0;
+    if(G.mode==="solo"){G.lives--;G.lvRes.push(false);floatPts("−1 ❤️",true);}
+    else floatPts("0",true);
+    if(timedOut){alienMood("sad");$("#alien").classList.add("flee");sfx.timeout();title="⏱ Süre doldu!";say(pick(SAY.to));}
+    else{alienMood("sad");const a=$("#alien");a.classList.remove("enter","sad");void a.offsetWidth;a.classList.add("sad");sfx.wrong();title="Hay aksi! Bu sefer olmadı.";say(pick(SAY.no));}
+    if(q.type==="write"&&given)extra=`<p>Senin yazdığın: ${fmt(given)}</p>`;
+    cls="no";
+  }
+  hud();
+  const last=G.mode==="solo"&&G.lives<=0;
+  $("#fbox").innerHTML=`<div class="fb ${cls}"><div class="row"><h3>${title}</h3>
+      ${(q.type==="read"||q.type==="write")&&canSpeak?'<button class="btn ghost small" id="sayBtn">🔊 Okunuşu dinle</button>':""}</div>
+    ${extra}${explain(q)}
+    <div class="row" style="justify-content:flex-end"><button class="btn ${ok?"mint":"pink"}" id="contBtn">${last?"Sonucu gör":"Devam et →"}</button></div></div>`;
+  if($("#sayBtn"))$("#sayBtn").addEventListener("click",()=>speak(words(q.s)));
+  $("#contBtn").addEventListener("click",cont);
+  setTimeout(()=>{$("#fbox").scrollIntoView({behavior:"smooth",block:"nearest"});$("#contBtn").focus({preventScroll:true});},150);
+}
+function cont(){
+  sfx.click();
+  if(G.mode==="group"){
+    G.qn++;
+    if(G.qn>=G.rounds*G.teams.length)return groupEnd();
+    G.turn=(G.turn+1)%G.teams.length;return turnIntro();
+  }
+  if(G.lives<=0)return gameOver();
+  if(G.boss){if(G.bossHp<=0)return victory();return nextQ();}
+  G.qi++;
+  if(G.qi>=LEVELS[G.lv].count)return levelDone();
+  nextQ();
+}
+function levelDone(){
+  const miss=G.lvRes.filter(x=>x===false).length,st=miss===0?3:miss<=2?2:1,L=LEVELS[G.lv];
+  sfx.level();confetti(140);
+  modal(`<div class="eyebrow">Durak tamam</div><div style="font-size:3rem;line-height:1">${L.icon}</div><h2>${L.name} kurtarıldı!</h2>
+    <div class="stars">${[1,2,3].map(i=>`<span class="${i<=st?"":"off"}">⭐</span>`).join("")}</div>
+    <p>${miss===0?"Hiç hata yapmadın, efsanesin!":miss<=2?"Çok iyi iş çıkardın!":"Tamamladın! Bir dahakine açıklamaları daha dikkatli oku."}</p>
+    <p style="color:var(--sun);font-family:var(--f-display);font-size:1.4rem">Puan: ${G.score}</p>
+    <button class="btn mint" data-act="go">${G.lv<3?"Sonraki durağa uç 🚀":"Son göreve hazırım!"}</button>`,()=>{
+      G.lv++;G.qi=0;G.lvRes=[];
+      if(G.lv>=LEVELS.length)bossIntro();else levelIntro();
+    });
+}
+function saveBest(){const b=store.get("gsu_best",0);if(G.score>b){store.set("gsu_best",G.score);return true;}return false;}
+function gameOver(){
+  stopTimer();sfx.lose();const rec=saveBest();
+  modal(`<div class="art">${alienSVG(pick(ALIENS),"sad")}</div><h2>Canların bitti!</h2>
+    <p>Ama ${G.rescued} uzaylıyı üsse ışınladın. Uzaylılar seni tekrar bekliyor!</p>
+    <p style="color:var(--sun);font-family:var(--f-display);font-size:1.5rem">Puan: ${G.score}${rec?" · Yeni rekor! 🏆":""}</p>
+    <div class="mrow"><button class="btn mint" data-act="again">Tekrar dene</button><button class="btn ghost" data-act="menu">Ana menü</button></div>`,
+    a=>a==="again"?startSolo():toMenu());
+}
+function victory(){
+  stopTimer();sfx.win();const rec=saveBest();
+  confetti(220);setTimeout(()=>confetti(160,innerWidth*.2,innerHeight*.4),500);setTimeout(()=>confetti(160,innerWidth*.8,innerHeight*.4),900);
+  modal(`<div class="art">${alienSVG(BOSS,"happy")}</div><div class="eyebrow">Görev tamamlandı</div><h2>Galaksi kurtuldu!</h2>
+    <p>Mega Pofuduk kristalleri geri verdi ve sana sarılmak istiyor. ${G.rescued} uzaylı artık üste güvende!</p>
+    <p style="color:var(--sun);font-family:var(--f-display);font-size:1.6rem">Puan: ${G.score}${rec?" · Yeni rekor! 🏆":""}</p>
+    <div class="mrow"><button class="btn mint" data-act="again">Yeniden oyna</button><button class="btn ghost" data-act="menu">Ana menü</button></div>`,
+    a=>a==="again"?startSolo():toMenu());
+}
+function groupEnd(){
+  stopTimer();sfx.win();confetti(220);
+  const rank=G.teams.slice().sort((a,b)=>b.score-a.score),top=rank[0].score,win=rank.filter(t=>t.score===top);
+  modal(`<div class="art">${alienSVG(win[0].a,"happy")}</div><div class="eyebrow">Yarış bitti</div>
+    <h2>${win.map(t=>esc(t.name)).join(" & ")} ${win.length>1?"berabere!":"kazandı!"}</h2>
+    <ol class="rank">${rank.map((t,i)=>`<li><span>${i+1}.</span><div class="av">${alienSVG(t.a)}</div><span class="nm">${esc(t.name)}<br><small style="color:var(--muted)">${t.right} doğru</small></span><span class="sc">${t.score}</span></li>`).join("")}</ol>
+    <div class="mrow"><button class="btn pink" data-act="again">Aynı takımlarla tekrar</button><button class="btn ghost" data-act="menu">Ana menü</button></div>`,
+    a=>{if(a==="again"){USED=new Set();G.teams.forEach(t=>{t.score=0;t.right=0;t.streak=0;t.hints=1;});G.turn=0;G.qn=0;hud();turnIntro();}else toMenu();});
+}
+function toMenu(){stopTimer();closeModal();if(canSpeak)speechSynthesis.cancel();syncDiff();show("#menu");}
+$("#quitBtn").addEventListener("click",()=>{
+  sfx.click();const was=!!timer;stopTimer();
+  modal(`<h2>Görevden çıkılsın mı?</h2><p>Bu oyundaki ilerleme kaybolacak.</p>
+    <div class="mrow"><button class="btn pink" data-act="quit">Evet, menüye dön</button><button class="btn ghost" data-act="stay">Oyuna devam</button></div>`,
+    a=>{if(a==="quit")toMenu();else if(was&&!G.locked)resumeTimer();});
+});
+
+/* ---------- Süre ---------- */
+let lastSec=null,tPrev=0;
+function startTimer(sec){G.tTotal=sec;G.tLeft=sec;lastSec=null;resumeTimer();}
+function resumeTimer(){stopTimer();tPrev=performance.now();timer=setInterval(tickTimer,100);drawTimer();}
+function stopTimer(){clearInterval(timer);timer=null;}
+function tickTimer(){
+  const now=performance.now();G.tLeft=Math.max(0,G.tLeft-(now-tPrev)/1000);tPrev=now;drawTimer();
+  const s=Math.ceil(G.tLeft);if(s<=5&&s!==lastSec&&s>0){sfx.tick();lastSec=s;}
+  if(G.tLeft<=0){stopTimer();answer(false,G.typed||null,null,true);}
+}
+function drawTimer(){
+  $("#tBar").style.width=(G.tLeft/G.tTotal*100)+"%";
+  $("#tTxt").textContent=`⏱ ${Math.ceil(G.tLeft)} sn`;
+  $("#timer").classList.toggle("low",G.tLeft<=5);
+}
+document.addEventListener("visibilitychange",()=>{if(!G||$("#play").hidden)return;
+  if(document.hidden){if(timer){stopTimer();G.pausedByHide=true;}musicStop();}
+  else{if(G.pausedByHide&&!G.locked&&$("#modal").hidden){G.pausedByHide=false;resumeTimer();}musicStart();}});
+
+/* ---------- Klavye ---------- */
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT")return;
+  if(!$("#modal").hidden){return;}
+  if(!G||$("#play").hidden)return;
+  if(G.locked){if(e.key==="Enter"&&$("#contBtn")&&document.activeElement!==$("#contBtn")){e.preventDefault();$("#contBtn").click();}return;}
+  if(G.q.type==="write"){
+    if(/^\d$/.test(e.key))keyIn(e.key);
+    else if(e.key==="Backspace"){e.preventDefault();keyIn("del");}
+    else if(e.key==="Enter"){e.preventDefault();keyIn("ok");}
+  }else if(/^[1-4]$/.test(e.key)){const b=$$("#answers .ans")[+e.key-1];if(b)b.click();}
+});
+
+})();
+</script>
+</body>
+</html>
